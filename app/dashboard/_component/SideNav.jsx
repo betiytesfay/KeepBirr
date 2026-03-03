@@ -46,7 +46,7 @@ function SideNav() {
       <Image src="/logo.svg" alt="logo" width={40} height={20} />
       <div>
         {menuList.map((menu, index) => (
-          <h2 className={`flex gap-2 items-center text-gray-600 font-medium p-5 cursor-pointer rounded-lg
+          <h2 key={menu.id} className={`flex gap-2 items-center text-gray-600 font-medium mb-2 p-5 cursor-pointer rounded-lg
           hover:text-primary hover:bg-blue-100 ${params === menu.path ? 'text-primary bg-blue-100' : ''}`}>
             <menu.icon />
             {menu.name}
