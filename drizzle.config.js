@@ -1,22 +1,17 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  out: "./drizzle",
-  dialect: "postgresql",
-  schema: "./src/schema.ts",
-
-  driver: "pglite",
+  schema: "./utils/schema.js",     // your schema file
+  out: "./drizzle",                // folder for migrations
+  dialect: "postgresql",           // keep as postgresql
+  driver: "pglite",                // lightweight Postgres-like local DB
   dbCredentials: {
-    url: "./database/",
+    url: "./database/",            // local folder where DB will live
   },
 
-  extensionsFilters: ["postgis"],
+  extensionsFilters: [],           // optional
   schemaFilter: "public",
   tablesFilter: "*",
-
-  introspect: {
-    casing: "camel",
-  },
 
   migrations: {
     prefix: "timestamp",
@@ -24,15 +19,6 @@ export default defineConfig({
     schema: "public",
   },
 
-  entities: {
-    roles: {
-      provider: '',
-      exclude: [],
-      include: []
-    }
-  },
-
-  breakpoints: true,
   strict: true,
   verbose: true,
 });

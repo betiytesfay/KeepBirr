@@ -38,7 +38,7 @@ function SideNav() {
   ]
   const params = usePathname()
   useEffect(() => {
-    console.log(paramssss)
+    console.log(params)
 
   }, [])
   return (

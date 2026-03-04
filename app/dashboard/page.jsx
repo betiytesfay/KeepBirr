@@ -1,9 +1,9 @@
-import React, { Children } from 'react'
+import React, { children } from 'react'
 
-function page({ Children }) {
+function page({ children }) {
   return (
     <div>
-
+      {children}
 
     </div>
   )
