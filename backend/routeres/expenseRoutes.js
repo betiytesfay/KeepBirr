@@ -1,4 +1,4 @@
-import express from 'express;
+import express from express;
 import {
   getAllExpenses,
   createExpense,
@@ -25,3 +25,23 @@ router.post('/', async (req, res) => {
     res.status(500).json({ success: false, error: 'server error' });
   }
 })
+router.patch('/:id', async (req, res) => {
+  try {
+    const expense = await updateExpense(req.params.id, req.body);
+    res.json({ sucess: true, data: expense });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'server error' })
+  }
+});
+router.delete('/:id', async (req, res) => {
+  try {
+    const expense = await deleteExpense(req.params.id);
+    res.json({ success: true, data: expense })
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'server error' })
+  }
+});
