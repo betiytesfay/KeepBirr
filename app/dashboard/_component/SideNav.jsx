@@ -25,15 +25,15 @@ function SideNav() {
     },
     {
       id: 4,
-      name: "debt to receive",
+      name: "Receivables",
       icon: ReceiptText,
-      path: "/dashboard/debt-to-receive"
+      path: "/dashboard/receivables"
     },
     {
       id: 5,
       name: "debt to pay",
       icon: ReceiptText,
-      path: "/dashboard/debt-to-pay"
+      path: "/dashboard/debt"
     }
   ]
   const params = usePathname()
