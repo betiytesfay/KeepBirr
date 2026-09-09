@@ -14,14 +14,14 @@ KeepBirr/
 │   ├── lib/              # Utility functions
 │   ├── public/           # Static assets (images, icons)
 │   ├── utils/            # Client utilities and database schema
+│   ├── middleware.js     # Clerk authentication middleware
 │   ├── components.json   # shadcn-ui configuration
 │   ├── drizzle.config.js # Frontend drizzle configuration
 │   ├── jsconfig.json     # Path aliases (@/* -> ./*)
 │   ├── next.config.mjs   # Next.js configuration
 │   ├── package.json      # Frontend dependencies & scripts
 │   ├── postcss.config.js # PostCSS config for Tailwind CSS
-│   ├── tailwind.config.js# Tailwind CSS styling config
-│   └── tsconfig.json     # TypeScript configuration
+│   └── tailwind.config.js# Tailwind CSS styling config
 ├── backend/              # Node.js + Express API backend
 │   ├── controllers/      # Route request handlers
 │   ├── data/             # Database connection pool
