@@ -16,50 +16,34 @@ import {
   UserCheck,
   Wallet,
   X,
+  HandCoins,
+  Loader2,
 } from "lucide-react";
 import useStore from "../../../store/useStore.js";
 import { debtSchema } from "../../../lib/validations.js";
 import api from "../../../lib/api.js";
-import { useQueryClient } from "@tanstack/react-query";
-
-const INITIAL_RECEIVABLES = [
-  {
-    id: 1,
-    contactName: "Abebe Bikila",
-    phone: "0911223344",
-    originalAmount: 4500,
-    remainingAmount: 4500,
-    dueDate: "2026-06-14",
-    status: "Due Soon",
-    note: "Borrowed for laptop repair",
-  },
-  {
-    id: 2,
-    contactName: "Selamawit Tadesse",
-    phone: "0922334455",
-    originalAmount: 3700,
-    remainingAmount: 3700,
-    dueDate: "2026-06-20",
-    status: "Pending",
-    note: "Shared travel expenses to Hawassa",
-  },
-  {
-    id: 3,
-    contactName: "Dawit Kebede",
-    phone: "0933445566",
-    originalAmount: 3500,
-    remainingAmount: 0,
-    dueDate: "2026-05-27",
-    status: "Settled",
-    note: "Repaid in full on May 27",
-  },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ReceivablesPage() {
   const showToast = useStore((state) => state.showToast);
   const queryClient = useQueryClient();
 
-  const [receivables, setReceivables] = useState(INITIAL_RECEIVABLES);
+  // Fetch live debts (isOwedToYou: true)
+  const { data: serverReceivables, isLoading } = useQuery({
+    queryKey: ["debts", "receivable"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/debts?type=receivable");
+        return res?.data || res || [];
+      } catch (err) {
+        console.warn("Could not fetch receivables:", err.message);
+        return [];
+      }
+    },
+  });
+
+  const receivables = Array.isArray(serverReceivables) ? serverReceivables : [];
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
@@ -74,17 +58,25 @@ export default function ReceivablesPage() {
   const [newNote, setNewNote] = useState("");
   const [formErrors, setFormErrors] = useState({});
 
-  const filtered = receivables.filter(
-    (item) =>
-      item.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.phone.includes(searchTerm)
-  );
+  const filtered = receivables.filter((item) => {
+    const nameMatch = (item.contactName || "").toLowerCase().includes(searchTerm.toLowerCase());
+    const phoneMatch = (item.contactPhone || "").includes(searchTerm);
+    return nameMatch || phoneMatch;
+  });
 
   const totalOutstanding = receivables
-    .filter((item) => item.status !== "Settled")
-    .reduce((sum, item) => sum + item.remainingAmount, 0);
+    .filter((item) => parseFloat(item.remainingAmount || 0) > 0)
+    .reduce((sum, item) => sum + parseFloat(item.remainingAmount || 0), 0);
 
-  const pendingCount = receivables.filter((item) => item.status !== "Settled").length;
+  const pendingCount = receivables.filter(
+    (item) => parseFloat(item.remainingAmount || 0) > 0
+  ).length;
+
+  const totalPaidBack = receivables.reduce((sum, item) => {
+    const orig = parseFloat(item.originalAmount || 0);
+    const rem = parseFloat(item.remainingAmount || 0);
+    return sum + Math.max(0, orig - rem);
+  }, 0);
 
   const handleOpenAdd = () => {
     setNewContactName("");
@@ -96,10 +88,28 @@ export default function ReceivablesPage() {
     setIsAddModalOpen(true);
   };
 
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (payload) => {
+      return await api.post("/debts", payload);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      showToast(
+        `Recorded ${Number(variables.originalAmount).toLocaleString()} ETB lent to ${variables.contactName}`,
+        "success"
+      );
+      setIsAddModalOpen(false);
+    },
+    onError: (err) => {
+      showToast(err.message || "Failed to record loan", "error");
+    },
+  });
+
   const handleCreateReceivable = (e) => {
     e.preventDefault();
 
-    // Zod validation
     const result = debtSchema.safeParse({
       contactName: newContactName,
       contactPhone: newPhone || undefined,
@@ -115,32 +125,14 @@ export default function ReceivablesPage() {
     }
 
     setFormErrors({});
-    const createdItem = {
-      id: Date.now(),
-      contactName: result.data.contactName,
-      phone: result.data.contactPhone || "Not provided",
-      accountNumber: "CBE / telebirr",
-      originalAmount: result.data.originalAmount,
-      remainingAmount: result.data.originalAmount,
-      dueDate: result.data.dueDate || "No due date",
-      status: "Pending",
-      note: result.data.description || "Peer loan",
-    };
-
-    setReceivables([createdItem, ...receivables]);
-    showToast(`Recorded ${result.data.originalAmount.toLocaleString()} ETB owed by ${result.data.contactName}`, "success");
-    setIsAddModalOpen(false);
-
-    // Sync with backend API
-    api.post("/debts", {
+    createMutation.mutate({
       contactName: result.data.contactName,
       contactPhone: result.data.contactPhone,
       originalAmount: result.data.originalAmount,
       isOwedToYou: true,
       dueDate: result.data.dueDate,
       description: result.data.description,
-    }).catch(() => {});
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    });
   };
 
   const handleOpenSettle = (item) => {
@@ -149,6 +141,25 @@ export default function ReceivablesPage() {
     setIsSettleModalOpen(true);
   };
 
+  // Payment mutation
+  const paymentMutation = useMutation({
+    mutationFn: async ({ debtId, amount }) => {
+      return await api.post(`/debts/${debtId}/payments`, { amount });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      showToast(
+        `Recorded repayment of ${Number(variables.amount).toLocaleString()} ETB!`,
+        "success"
+      );
+      setIsSettleModalOpen(false);
+    },
+    onError: (err) => {
+      showToast(err.message || "Failed to record repayment", "error");
+    },
+  });
+
   const handleConfirmRepayment = (e) => {
     e.preventDefault();
     if (!selectedItem) return;
@@ -156,23 +167,10 @@ export default function ReceivablesPage() {
     const amount = parseFloat(repayAmount);
     if (isNaN(amount) || amount <= 0) return;
 
-    setReceivables((prev) =>
-      prev.map((item) => {
-        if (item.id === selectedItem.id) {
-          const newRemaining = Math.max(0, item.remainingAmount - amount);
-          return {
-            ...item,
-            remainingAmount: newRemaining,
-            status: newRemaining === 0 ? "Settled" : "Partially Paid",
-          };
-        }
-        return item;
-      })
-    );
-
-    showToast(`Recorded repayment of ${amount.toLocaleString()} ETB!`, "success");
-    setIsSettleModalOpen(false);
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    paymentMutation.mutate({
+      debtId: selectedItem.id,
+      amount,
+    });
   };
 
   return (
@@ -183,6 +181,9 @@ export default function ReceivablesPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 font-serif tracking-tight">
             Money Lent
           </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Keep track of money you have lent to friends, family, or colleagues.
+          </p>
         </div>
 
         <button
@@ -226,7 +227,9 @@ export default function ReceivablesPage() {
             <span className="text-3xl font-bold text-gray-900 font-serif">
               {pendingCount}
             </span>
-            <span className="text-xs font-bold text-gray-500">People</span>
+            <span className="text-xs font-bold text-gray-500">
+              {pendingCount === 1 ? "Person" : "People"}
+            </span>
           </div>
         </div>
 
@@ -241,7 +244,7 @@ export default function ReceivablesPage() {
           </div>
           <div className="flex items-baseline gap-1 mt-3">
             <span className="text-3xl font-bold text-emerald-700 font-serif">
-              3,500
+              {totalPaidBack.toLocaleString()}
             </span>
             <span className="text-xs font-bold text-gray-500">ETB</span>
           </div>
@@ -277,82 +280,102 @@ export default function ReceivablesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {filtered.map((item) => {
-                const isSettled = item.status === "Settled";
-                const isDueSoon = item.status === "Due Soon";
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-14 text-center text-gray-400">
+                    <HandCoins className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                    <p className="font-bold text-gray-700 text-sm">No money lent recorded</p>
+                    <p className="text-xs text-gray-400 mt-0.5 mb-3">
+                      Lend money to someone? Record it here to keep friendly track of repayments.
+                    </p>
+                    <button
+                      onClick={handleOpenAdd}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-onyx text-white hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-spring" />
+                      <span>Record Money Lent</span>
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((item) => {
+                  const rem = parseFloat(item.remainingAmount || 0);
+                  const isSettled = rem <= 0;
+                  const dateStr = item.dueDate
+                    ? new Date(item.dueDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "No due date";
 
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm shrink-0">
-                          <User className="w-4 h-4" />
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm shrink-0">
+                            <User className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 leading-tight">
+                              {item.contactName}
+                            </p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">
+                              {item.description || "Peer loan"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 leading-tight">
-                            {item.contactName}
-                          </p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">
-                            {item.note}
-                          </p>
+                      </td>
+
+                      <td className="py-4 px-6 text-xs text-gray-600">
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="font-medium text-gray-700">
+                            {item.contactPhone || "—"}
+                          </span>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="py-4 px-6 text-xs text-gray-600">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="font-medium text-gray-700">{item.phone || "—"}</span>
-                      </div>
-                    </td>
+                      <td className="py-4 px-6 text-xs text-gray-500">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                          <span>{dateStr}</span>
+                        </div>
+                      </td>
 
-                    <td className="py-4 px-6 text-xs text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                        <span>{item.dueDate}</span>
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-6">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold ${
-                          isSettled
-                            ? "bg-gray-100 text-gray-600"
-                            : isDueSoon
-                            ? "bg-rose-100 text-rose-700"
-                            : "bg-emerald-50 text-emerald-700"
-                        }`}
-                      >
-                        {isSettled ? (
-                          <Check className="w-3 h-3" />
-                        ) : isDueSoon ? (
-                          <AlertCircle className="w-3 h-3" />
-                        ) : (
-                          <Clock className="w-3 h-3" />
-                        )}
-                        <span>{item.status}</span>
-                      </span>
-                    </td>
-
-                    <td className="py-4 px-6 text-right font-serif font-bold text-gray-900 text-base">
-                      {item.remainingAmount.toLocaleString()} ETB
-                    </td>
-
-                    <td className="py-4 px-6 text-center">
-                      {!isSettled ? (
-                        <button
-                          onClick={() => handleOpenSettle(item)}
-                          className="px-3 py-1.5 rounded-lg bg-onyx text-white hover:bg-gray-800 text-xs font-semibold transition-all hover:scale-[1.02] cursor-pointer"
+                      <td className="py-4 px-6">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold ${
+                            isSettled
+                              ? "bg-gray-100 text-gray-600"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
                         >
-                          Record Payment
-                        </button>
-                      ) : (
-                        <span className="text-xs text-gray-400 font-medium">Completed</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                          {isSettled ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                          <span>{isSettled ? "Settled" : "Pending"}</span>
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-6 text-right font-serif font-bold text-gray-900 text-base">
+                        {rem.toLocaleString()} ETB
+                      </td>
+
+                      <td className="py-4 px-6 text-center">
+                        {!isSettled ? (
+                          <button
+                            onClick={() => handleOpenSettle(item)}
+                            className="px-3 py-1.5 rounded-lg bg-onyx text-white hover:bg-gray-800 text-xs font-semibold transition-all hover:scale-[1.02] cursor-pointer"
+                          >
+                            Record Payment
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400 font-medium">Completed</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -461,15 +484,17 @@ export default function ReceivablesPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-onyx text-white hover:bg-gray-800 text-xs font-bold shadow-xs transition-all hover:scale-[1.02]"
+                  disabled={createMutation.isPending}
+                  className="px-5 py-2.5 rounded-xl bg-onyx text-white hover:bg-gray-800 text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
                 >
-                  Save Record
+                  {createMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Record</span>
                 </button>
               </div>
             </form>
@@ -499,7 +524,10 @@ export default function ReceivablesPage() {
                   Person: <strong className="text-gray-900">{selectedItem.contactName}</strong>
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Remaining Owed: <strong className="text-onyx">{selectedItem.remainingAmount.toLocaleString()} ETB</strong>
+                  Remaining Owed:{" "}
+                  <strong className="text-onyx">
+                    {parseFloat(selectedItem.remainingAmount || 0).toLocaleString()} ETB
+                  </strong>
                 </p>
               </div>
 
@@ -521,15 +549,17 @@ export default function ReceivablesPage() {
                 <button
                   type="button"
                   onClick={() => setIsSettleModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-onyx text-white hover:bg-gray-800 text-xs font-bold shadow-xs transition-all"
+                  disabled={paymentMutation.isPending}
+                  className="px-5 py-2 rounded-xl bg-onyx text-white hover:bg-gray-800 text-xs font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
                 >
-                  Confirm Payment
+                  {paymentMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Confirm Payment</span>
                 </button>
               </div>
             </form>

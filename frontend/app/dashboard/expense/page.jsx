@@ -49,44 +49,6 @@ const CATEGORIES = [
   "Shopping",
 ];
 
-const DEFAULT_EXPENSES = [
-  {
-    id: 1,
-    description: "Fresh Corner Supermarket",
-    category: "Food & Groceries",
-    amount: "1250",
-    date: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    description: "TotalEnergies Fuel Station",
-    category: "Transport & Fuel",
-    amount: "850",
-    date: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 3,
-    description: "Apartment Monthly Rent",
-    category: "Housing & Rent",
-    amount: "12000",
-    date: new Date(Date.now() - 86400000 * 5).toISOString(),
-  },
-  {
-    id: 4,
-    description: "Ethio Telecom Fiber Internet",
-    category: "Utilities & Wifi",
-    amount: "950",
-    date: new Date(Date.now() - 86400000 * 10).toISOString(),
-  },
-  {
-    id: 5,
-    description: "Cinema Ethiopia Movie Night",
-    category: "Entertainment",
-    amount: "400",
-    date: new Date(Date.now() - 86400000 * 12).toISOString(),
-  },
-];
-
 export default function ExpensePage() {
   const openAddExpense = useStore((state) => state.openAddExpense);
   const searchQuery = useStore((state) => state.searchQuery);
@@ -96,32 +58,29 @@ export default function ExpensePage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("date-desc"); // "date-desc" | "amount-desc" | "amount-asc"
 
-  // React Query: Fetch expenses
+  // React Query: Fetch expenses from live backend
   const { data: serverExpenses, isLoading } = useExpenses();
   const queryClient = useQueryClient();
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      try {
-        await api.delete(`/expenses/${id}`);
-      } catch (err) {
-        console.warn("Simulated delete locally for mock id:", id);
-      }
-      return id;
+      return await api.delete(`/expenses/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["currentBudget"] });
       showToast("Expense deleted successfully", "info");
+    },
+    onError: (err) => {
+      showToast(err.message || "Failed to delete expense", "error");
     },
   });
 
+  // Real user expenses only - zero fake fallbacks
   const allExpenses = useMemo(() => {
-    if (serverExpenses && serverExpenses.length > 0) {
-      return serverExpenses;
-    }
-    return DEFAULT_EXPENSES;
+    return Array.isArray(serverExpenses) ? serverExpenses : [];
   }, [serverExpenses]);
 
   // Filter & Search
@@ -287,9 +246,16 @@ export default function ExpensePage() {
               {filteredExpenses.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-gray-400">
-                    <ReceiptText className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="font-semibold">No expenses found matching your criteria</p>
-                    <p className="text-xs mt-0.5">Try clearing filters or recording a new expense.</p>
+                    <ReceiptText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                    <p className="font-bold text-gray-700 text-sm">No expenses found</p>
+                    <p className="text-xs text-gray-400 mt-0.5 mb-3">Record your daily expenses to monitor your cash flow.</p>
+                    <button
+                      onClick={openAddExpense}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-onyx text-white hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-spring" />
+                      <span>Record Expense</span>
+                    </button>
                   </td>
                 </tr>
               ) : (

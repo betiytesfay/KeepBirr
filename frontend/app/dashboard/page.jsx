@@ -54,11 +54,11 @@ export default function DashboardPage() {
   const { data, isLoading, isFetching, refetch } = useDashboardData();
 
   const kpi = data?.kpi || {
-    budgetTotal: 45000,
-    expenseTotal: 18450,
-    receivablesTotal: 8200,
-    debtTotal: 3500,
-    percentSpent: 41,
+    budgetTotal: 0,
+    expenseTotal: 0,
+    receivablesTotal: 0,
+    debtTotal: 0,
+    percentSpent: 0,
   };
 
   return (
