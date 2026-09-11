@@ -60,6 +60,10 @@ process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection:', err);
 });
 
-app.listen(PORT, () => {
-  console.log(`KeepBirr Backend Server running on port ${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`KeepBirr Backend Server running on port ${PORT}`);
+  });
+}
+
+export default app;
