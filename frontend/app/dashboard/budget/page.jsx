@@ -26,7 +26,6 @@ import api from "../../../lib/api.js";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDashboardData } from "../../../hooks/useDashboard.js";
 
-// Real imported Lucide Icons mapping for categories
 const CATEGORY_ICON_MAP = {
   "Food & Dining": Utensils,
   "Food & Groceries": Utensils,
@@ -47,7 +46,6 @@ export default function BudgetPage() {
   const [tempBudgetInput, setTempBudgetInput] = useState("");
   const [budgetError, setBudgetError] = useState("");
 
-  // Fetch current month budget from live backend
   const { data: budgetData, isLoading: isBudgetLoading } = useQuery({
     queryKey: ["currentBudget"],
     queryFn: async () => {
@@ -61,7 +59,6 @@ export default function BudgetPage() {
     },
   });
 
-  // Fetch live category breakdown from dashboard overview
   const { data: dashboardData } = useDashboardData();
 
   const totalBudget = budgetData?.totalBudget ? parseFloat(budgetData.totalBudget) : 0;
@@ -77,7 +74,6 @@ export default function BudgetPage() {
     setIsAdjustModalOpen(true);
   };
 
-  // Save budget mutation
   const saveMutation = useMutation({
     mutationFn: async (amount) => {
       const now = new Date();
@@ -119,7 +115,6 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 font-serif tracking-tight">
@@ -139,7 +134,6 @@ export default function BudgetPage() {
         </button>
       </div>
 
-      {/* If No Budget is Set Yet Banner */}
       {totalBudget === 0 && !isBudgetLoading && (
         <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -325,11 +319,10 @@ export default function BudgetPage() {
                       setTempBudgetInput(e.target.value);
                       if (budgetError) setBudgetError("");
                     }}
-                    className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 text-lg font-bold font-serif text-gray-900 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                      budgetError
-                        ? "border-rose-400 focus:ring-rose-200"
-                        : "border-gray-200 focus:border-onyx focus:ring-onyx/10"
-                    }`}
+                    className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 text-lg font-bold font-serif text-gray-900 focus:outline-none focus:ring-2 focus:bg-white transition-all ${budgetError
+                      ? "border-rose-400 focus:ring-rose-200"
+                      : "border-gray-200 focus:border-onyx focus:ring-onyx/10"
+                      }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">
                     ETB

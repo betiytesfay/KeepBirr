@@ -4,10 +4,10 @@ import React from "react";
 import { ArrowDownLeft, ArrowUpRight, CreditCard, PiggyBank, ReceiptText, TrendingUp } from "lucide-react";
 
 function CardInfo({
-  budgetTotal = 45000,
-  expenseTotal = 18450,
-  receivablesTotal = 8200,
-  debtTotal = 3500,
+  budgetTotal = 0,
+  expenseTotal = 0,
+  receivablesTotal = 0,
+  debtTotal = 0,
 }) {
   const bTotal = Number(budgetTotal || 0);
   const eTotal = Number(expenseTotal || 0);
