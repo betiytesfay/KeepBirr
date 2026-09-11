@@ -20,7 +20,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Explicit header middleware to guarantee cross-origin access on all routes & preflights
 app.use((req, res, next) => {
