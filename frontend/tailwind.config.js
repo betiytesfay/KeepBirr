@@ -6,7 +6,18 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        spring: "#02F5A1",
+        onyx: "#07191E",
+        navy: "#000066",
+        yellowAccent: "#FFFF99",
+      },
+      fontFamily: {
+        serif: ["'Playfair Display'", "Georgia", "serif"],
+        sans: ["'Playfair Display'", "Georgia", "serif"],
+      },
+    },
   },
   plugins: [],
 }
