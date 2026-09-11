@@ -10,7 +10,7 @@
         },
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://keep-birr-7v3b.vercel.app/"
+          "value": "https://keep-birr-7v3b.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",
