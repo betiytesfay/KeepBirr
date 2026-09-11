@@ -1,64 +1,93 @@
-"use client"
-import React, { useEffect } from 'react'
-import Image from 'next/image'
-import { LayoutGrid, PiggyBank, ReceiptText } from "lucide-react"
-import { usePathname } from 'next/navigation'
+"use client";
+
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  ArrowDownLeft,
+  CreditCard,
+  LayoutGrid,
+  PiggyBank,
+  ReceiptText,
+  ShieldCheck,
+} from "lucide-react";
 
 function SideNav() {
+  const pathname = usePathname();
+
   const menuList = [
     {
       id: 1,
       name: "Dashboard",
       icon: LayoutGrid,
-      path: "/dashboard"
-    }, {
+      path: "/dashboard",
+    },
+    {
       id: 2,
       name: "Budget",
       icon: PiggyBank,
-      path: "/dashboard/budget"
+      path: "/dashboard/budget",
     },
     {
       id: 3,
       name: "Expense",
       icon: ReceiptText,
-      path: "/dashboard/expense"
+      path: "/dashboard/expense",
     },
     {
       id: 4,
-      name: "Receivables",
-      icon: ReceiptText,
-      path: "/dashboard/receivables"
+      name: "Money Lent",
+      icon: ArrowDownLeft,
+      path: "/dashboard/receivables",
     },
     {
       id: 5,
-      name: "debt to pay",
-      icon: ReceiptText,
-      path: "/dashboard/debt"
-    }
-  ]
-  const params = usePathname()
-  useEffect(() => {
-    console.log(params)
+      name: "Money I Owe",
+      icon: CreditCard,
+      path: "/dashboard/debt",
+    },
+  ];
 
-  }, [])
   return (
-    <div className="h-screen p-5 bg-blue-50 border shadow-sm">
-      <Image src="/logo.svg" alt="logo" width={40} height={20} />
+    <div className="h-screen flex flex-col justify-between p-5 bg-white border-r border-gray-200 shadow-2xs">
       <div>
-        {menuList.map((menu, index) => (
-          <h2 key={menu.id} className={`flex gap-2 items-center text-gray-600 font-medium mb-2 p-5 cursor-pointer rounded-lg
-          hover:text-primary hover:bg-blue-100 ${params === menu.path ? 'text-primary bg-blue-100' : ''}`}>
-            <menu.icon />
-            {menu.name}
-          </h2>
-        ))
-        }
-      </div>
-      <div className="fixed bottom-10 p-5 flex items-center">
-        <p>create your own profile</p>
+        {/* Brand Logo */}
+        <Link href="/" className="flex items-center gap-2.5 mb-8 px-2 group">
+          <Image src="/logo.svg" alt="KeepBirr Logo" width={34} height={34} priority />
+          <div className="flex items-baseline">
+            <span className="font-extrabold text-xl text-onyx tracking-tight">Keep</span>
+            <span className="font-extrabold text-xl text-gray-900 tracking-tight">Birr</span>
+            <span className="w-2 h-2 rounded-full bg-spring ml-1" />
+          </div>
+        </Link>
+
+        {/* Menu Navigation Items */}
+        <nav className="space-y-1">
+          <p className="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            Menu
+          </p>
+          {menuList.map((menu) => {
+            const isActive = pathname === menu.path;
+            const Icon = menu.icon;
+            return (
+              <Link
+                key={menu.id}
+                href={menu.path}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+                    ? "bg-spring/20 text-onyx font-bold border border-spring/50 shadow-2xs"
+                    : "text-gray-600 hover:text-onyx hover:bg-gray-50 border border-transparent"
+                  }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? "text-onyx" : "text-gray-400"}`} />
+                <span>{menu.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
-  )
+  );
 }
 
-export default SideNav
+export default SideNav;
