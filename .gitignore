@@ -29,6 +29,9 @@ coverage/
 .env*
 /frontend/.env*
 /backend/.env*
+!.env.example
+!/frontend/.env.example
+!/backend/.env.example
 
 # TypeScript
 *.tsbuildinfo
