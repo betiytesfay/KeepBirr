@@ -9,9 +9,9 @@ function Hero() {
   return (
     <div className="bg-white text-gray-900 w-full overflow-x-hidden">
       {/* Hero Section */}
-      <section className="pt-8 sm:pt-16 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto flex flex-col items-center text-center">
+      <section className="pt-14 sm:pt-24 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto flex flex-col items-center text-center">
 
-        {/* Main Title - Responsive sizing for phones */}
+        {/* Main Title - Responsive sizing with generous top space */}
         <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 max-w-3xl leading-[1.25] sm:leading-tight">
           <span>Manage Your </span>
           <span className="text-onyx underline decoration-spring decoration-2 underline-offset-4 sm:underline-offset-6">
@@ -20,9 +20,9 @@ function Hero() {
           <span> & Build Lasting Savings</span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="mt-3.5 sm:mt-5 text-sm sm:text-base md:text-lg text-gray-600 max-w-xl leading-relaxed px-2">
-          Take total control of your money. Plan monthly budgets, record daily expenses, and keep track of debts and repayments effortlessly.
+        {/* Subtitle - Shortened, punchy copy */}
+        <p className="mt-3.5 sm:mt-5 text-sm sm:text-base md:text-lg text-gray-500 max-w-md leading-relaxed px-2">
+          Plan budgets, track daily expenses, and manage debts with ease.
         </p>
 
         {/* Call to Actions */}
@@ -58,8 +58,8 @@ function Hero() {
           </div>
         </div>
 
-        {/* Dashboard Preview Frame */}
-        <div className="mt-10 sm:mt-14 w-full max-w-5xl rounded-2xl border border-gray-200 bg-gray-50/50 p-1.5 sm:p-3 shadow-xl sm:shadow-2xl">
+        {/* Dashboard Preview Frame - Extra whitespace above for breathing room */}
+        <div className="mt-14 sm:mt-20 lg:mt-24 w-full max-w-5xl rounded-2xl border border-gray-200 bg-gray-50/50 p-1.5 sm:p-3 shadow-xl sm:shadow-2xl">
           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-t-xl border-b border-gray-200 mb-1.5 sm:mb-2">
             <div className="flex gap-1.5">
               <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
