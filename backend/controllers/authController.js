@@ -2,17 +2,17 @@ import { db } from '../db/index.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { hashPassword, comparePassword, generateToken } from '../services/authService.js';
+
 export const register = async (req, res) => {
   try {
     const { name, phoneNumber, email, password } = req.body;
     if (!name || !phoneNumber || !password) {
-      return res.status(400).json({ success: false, error: " please fill name and phoneNumber" })
+      return res.status(400).json({ success: false, error: "Please provide name, phone number, and password" });
     }
-    const existingUser = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber))
+
+    const existingUser = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber));
     if (existingUser.length > 0) {
-      return res.status(400).json({ success: false, error: "Phone number already exists" })
-
-
+      return res.status(400).json({ success: false, error: "Phone number already exists" });
     }
 
     if (email) {
@@ -21,53 +21,59 @@ export const register = async (req, res) => {
         return res.status(400).json({ success: false, error: "Email already registered" });
       }
     }
+
     const hashedPassword = await hashPassword(password);
     const newUser = await db.insert(users).values({
       name,
       email: email || null,
       password_hash: hashedPassword,
       phoneNumber
-    }).returning()
-    const token = generateToken(newUser[0].id, newUser[0].phoneNumber)
+    }).returning();
+
+    const token = generateToken(newUser[0].id, newUser[0].phoneNumber);
     res.status(201).json({
       success: true,
       data: {
-        user: { id: newUser[0].id, name: newUser[0].name, phoneNumber: newUser[0].phoneNumber },
+        user: { id: newUser[0].id, name: newUser[0].name, email: newUser[0].email, phoneNumber: newUser[0].phoneNumber },
         token,
       }
-    })
+    });
   } catch (error) {
-    console.error(error)
+    console.error("Register error:", error);
     res.status(500).json({
       success: false,
-      error: "server error"
-    })
+      error: error.message || "Server error"
+    });
   }
-}
+};
+
 export const login = async (req, res) => {
   try {
     const { phoneNumber, password } = req.body;
     if (!phoneNumber || !password) {
       return res.status(400).json({
         success: false,
-        error: "please enter phone number and password"
-      })
+        error: "Please enter phone number and password"
+      });
     }
-    const foundUser = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber))
+
+    const foundUser = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber));
     if (foundUser.length === 0) {
       return res.status(401).json({
         success: false,
-        error: "invalid credentials"
-      })
+        error: "Invalid credentials"
+      });
     }
-    const user = foundUser[0]
-    const isMatch = await comparePassword(password, user.password_hash)
+
+    const user = foundUser[0];
+    const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
         error: "Invalid credentials"
-      })
+      });
     }
+
     const token = generateToken(user.id, user.phoneNumber);
     res.json({
       success: true,
@@ -76,11 +82,33 @@ export const login = async (req, res) => {
         token,
       },
     });
-
   } catch (error) {
-    console.error(error)
-
-    res.status(500).json({ success: false, error: "Server error" });
-
+    console.error("Login error:", error);
+    res.status(500).json({ success: false, error: error.message || "Server error" });
   }
-}
+};
+
+export const getMe = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const foundUser = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      phoneNumber: users.phoneNumber,
+      createdAt: users.createdAt,
+    }).from(users).where(eq(users.id, userId));
+
+    if (foundUser.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      data: { user: foundUser[0] },
+    });
+  } catch (error) {
+    console.error("getMe error:", error);
+    res.status(500).json({ success: false, error: error.message || "Server error" });
+  }
+};
