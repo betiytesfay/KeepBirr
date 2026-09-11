@@ -62,7 +62,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto relative">
+    <div className="space-y-6 sm:space-y-8 w-full max-w-full min-w-0 relative">
       {/* Top Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-gray-200">
         <div>

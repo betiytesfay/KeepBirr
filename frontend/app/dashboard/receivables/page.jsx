@@ -174,7 +174,7 @@ export default function ReceivablesPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 w-full max-w-full min-w-0">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
         <div>
@@ -266,9 +266,9 @@ export default function ReceivablesPage() {
       </div>
 
       {/* Receivables List Table */}
-      <div className="rounded-2xl bg-white border border-gray-200 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="rounded-2xl bg-white border border-gray-200 shadow-2xs overflow-hidden w-full max-w-full">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse min-w-[580px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/70 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                 <th className="py-3.5 px-6">Person</th>
