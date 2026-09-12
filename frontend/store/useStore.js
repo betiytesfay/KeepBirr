@@ -1,4 +1,7 @@
 import { create } from "zustand";
+
+let toastTimer = null;
+
 export const useStore = create((set) => ({
   // --- 1. Modal Visibility ---
   isAddExpenseOpen: false,
@@ -19,15 +22,25 @@ export const useStore = create((set) => ({
   selectedCategory: "All",
   setSelectedCategory: (category) => set({ selectedCategory: category }),
 
-  // --- 3. Client Toast Notifications ---
+  // --- 3. Client Toast Notifications (with timer leak prevention) ---
   toast: null, // { message: string, type: 'success' | 'error' | 'info' }
   showToast: (message, type = "success") => {
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+    }
     set({ toast: { message, type } });
-    setTimeout(() => {
+    toastTimer = setTimeout(() => {
       set({ toast: null });
+      toastTimer = null;
     }, 3500);
   },
-  clearToast: () => set({ toast: null }),
+  clearToast: () => {
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    set({ toast: null });
+  },
 
   // --- 4. Authenticated User ---
   user: null,

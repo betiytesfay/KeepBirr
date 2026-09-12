@@ -28,7 +28,6 @@ function DashboardChart({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Activity Bar Chart (2 cols) */}
       <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
@@ -57,7 +56,6 @@ function DashboardChart({
             </p>
           </div>
         ) : (
-          /* Visual Bar Chart */
           <div className="h-64 flex items-end justify-between gap-2 sm:gap-6 pt-6 pb-2 px-2 border-b border-gray-100">
             {monthlyBars.map((item, idx) => {
               const bVal = Number(item.budget || 0);
@@ -77,11 +75,10 @@ function DashboardChart({
                     {/* Spent Column */}
                     <div
                       style={{ height: `${Math.max(4, spentHeight)}%` }}
-                      className={`w-3 sm:w-5 rounded-t-md transition-all duration-300 relative ${
-                        idx === monthlyBars.length - 1
-                          ? "bg-spring shadow-xs"
-                          : "bg-onyx group-hover:bg-gray-800"
-                      }`}
+                      className={`w-3 sm:w-5 rounded-t-md transition-all duration-300 relative ${idx === monthlyBars.length - 1
+                        ? "bg-spring shadow-xs"
+                        : "bg-onyx group-hover:bg-gray-800"
+                        }`}
                       title={`Spent: ${sVal.toLocaleString()} ETB`}
                     />
                   </div>
@@ -95,7 +92,6 @@ function DashboardChart({
         )}
       </div>
 
-      {/* Category Breakdown (1 col) */}
       <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between mb-5">

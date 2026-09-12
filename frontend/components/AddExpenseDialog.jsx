@@ -39,6 +39,14 @@ export default function AddExpenseDialog({ isOpen: propIsOpen, onClose: propOnCl
 
   const [formErrors, setFormErrors] = useState({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const timerRef = React.useRef(null);
+
+  // Clear timer on unmount to prevent state updates on unmounted component
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   // 2. TANSTACK REACT QUERY: Server state mutation
   const createExpenseMutation = useCreateExpense();
@@ -82,7 +90,8 @@ export default function AddExpenseDialog({ isOpen: propIsOpen, onClose: propOnCl
       onSuccess: () => {
         setSubmitSuccess(true);
         showToast("Expense recorded successfully! Dashboard synced.", "success");
-        setTimeout(() => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
           setSubmitSuccess(false);
           setFormData({
             amount: "",
