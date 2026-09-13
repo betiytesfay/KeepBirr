@@ -1,9 +1,6 @@
 import { create } from "zustand";
-
 let toastTimer = null;
-
 export const useStore = create((set) => ({
-  // --- 1. Modal Visibility ---
   isAddExpenseOpen: false,
   openAddExpense: () => set({ isAddExpenseOpen: true }),
   closeAddExpense: () => set({ isAddExpenseOpen: false }),
@@ -12,7 +9,6 @@ export const useStore = create((set) => ({
   openAddBudget: () => set({ isAddBudgetOpen: true }),
   closeAddBudget: () => set({ isAddBudgetOpen: false }),
 
-  // --- 2. Global Search & Filters ---
   searchQuery: "",
   setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -22,12 +18,9 @@ export const useStore = create((set) => ({
   selectedCategory: "All",
   setSelectedCategory: (category) => set({ selectedCategory: category }),
 
-  // --- 3. Client Toast Notifications (with timer leak prevention) ---
-  toast: null, // { message: string, type: 'success' | 'error' | 'info' }
+
   showToast: (message, type = "success") => {
-    if (toastTimer) {
-      clearTimeout(toastTimer);
-    }
+    if (toastTimer) clearTimeout(toastTimer);
     set({ toast: { message, type } });
     toastTimer = setTimeout(() => {
       set({ toast: null });
@@ -35,10 +28,8 @@ export const useStore = create((set) => ({
     }, 3500);
   },
   clearToast: () => {
-    if (toastTimer) {
+    if (toastTimer)
       clearTimeout(toastTimer);
-      toastTimer = null;
-    }
     set({ toast: null });
   },
 

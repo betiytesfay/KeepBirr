@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
+import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/authRouter.js';
 import expenseRoutes from './routes/expenseRoutes.js';
@@ -12,7 +13,6 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware & CORS Configuration
 const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -21,7 +21,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Explicit header middleware to guarantee cross-origin access on all routes & preflights
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -33,16 +32,33 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests from this IP, please try again after 15 minutes.' },
+});
 
-// API Routes
-app.use('/api/auth', authRoutes);
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Too many authentication attempts. Please try again after 15 minutes.'
+
+  },
+})
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api', generalLimiter);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/debts', debtRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Root healthcheck
 app.get('/', (req, res) => {
   res.json({
     status: 'ok',
@@ -53,7 +69,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404 Handler
+// 404 
 app.use((req, res) => {
   res.status(404).json({
     success: false,

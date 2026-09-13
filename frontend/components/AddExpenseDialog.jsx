@@ -19,7 +19,6 @@ const CATEGORIES = [
 ];
 
 export default function AddExpenseDialog({ isOpen: propIsOpen, onClose: propOnClose }) {
-  // 1. ZUSTAND GLOBAL STATE: Read modal open state & actions
   const isAddExpenseOpen = useStore((state) => state.isAddExpenseOpen);
   const closeAddExpense = useStore((state) => state.closeAddExpense);
   const showToast = useStore((state) => state.showToast);
@@ -40,15 +39,12 @@ export default function AddExpenseDialog({ isOpen: propIsOpen, onClose: propOnCl
   const [formErrors, setFormErrors] = useState({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const timerRef = React.useRef(null);
-
-  // Clear timer on unmount to prevent state updates on unmounted component
   React.useEffect(() => {
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+      if (timerRef.current)
+        clearTimeout(timerRef.current);
+    }
   }, []);
-
-  // 2. TANSTACK REACT QUERY: Server state mutation
   const createExpenseMutation = useCreateExpense();
 
   if (!isOpen) return null;
@@ -65,11 +61,6 @@ export default function AddExpenseDialog({ isOpen: propIsOpen, onClose: propOnCl
     e.preventDefault();
     setSubmitSuccess(false);
 
-    /**
-     * ========================================================================
-     * 3. ZOD RUNTIME TYPE CHECKING & VALIDATION
-     * ========================================================================
-     */
     const validationResult = expenseSchema.safeParse({
       amount: formData.amount,
       category: formData.category,
@@ -154,11 +145,10 @@ export default function AddExpenseDialog({ isOpen: propIsOpen, onClose: propOnCl
                 placeholder="e.g. 850"
                 value={formData.amount}
                 onChange={handleChange}
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden transition-colors ${
-                  formErrors.amount
-                    ? "border-rose-400 focus:border-rose-500 bg-rose-50/30"
-                    : "border-gray-200 focus:border-onyx bg-white"
-                }`}
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden transition-colors ${formErrors.amount
+                  ? "border-rose-400 focus:border-rose-500 bg-rose-50/30"
+                  : "border-gray-200 focus:border-onyx bg-white"
+                  }`}
               />
               <span className="absolute right-3.5 top-2.5 text-xs font-bold text-gray-400">
                 ETB
